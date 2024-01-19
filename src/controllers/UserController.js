@@ -1,6 +1,7 @@
 const AppError = require("../utils/AppError");
 const knex = require("../database/knex");
 const { hash, compare } = require("bcryptjs");
+const DiskStorage = require("../providers/DiskStorage");
 
 class UserController{
 
@@ -74,6 +75,28 @@ class UserController{
         .where({id: user_id});
         
         return response.json();
+    }
+
+    async avatar(req, res){
+        const user_id = req.user.id;
+        const avatar = req.file.filename;
+        const diskStorage = new DiskStorage();
+
+        const [user] = await knex("users").where({id: user_id});
+
+        if(!user){
+            throw new AppError("Para trocar foto de usuário é nescessário está logado", 401);
+        }
+
+        if(user.avatar){
+            await diskStorage.deleteFile(user.avatar);
+        }
+
+        await diskStorage.saveFile(avatar);
+
+        await knex("users").update({avatar}).where({id:user_id});
+
+        return res.json(user)
     }
 
 }
