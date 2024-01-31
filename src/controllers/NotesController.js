@@ -9,7 +9,7 @@ class NotesController{
         const user_id = request.user.id;
 
         let note;
-        
+
         if(tags){
             const Tags = tags.split(",").map(tag => tag);
             
@@ -23,8 +23,9 @@ class NotesController{
             .whereIn("name", Tags)
             .whereLike("notes.title", `%${title}%`)
             .innerJoin("notes", "notes.id", "tags.note_id")
+            .groupBy("notes.id")
             .orderBy("notes.title")
-        }else{
+        } else {
             note = await knex("notes")
             .whereLike("title", `%${title}%`)
             .where(user_id)
@@ -103,6 +104,17 @@ class NotesController{
         const note = await knex("notes").where({id: note_id, user_id: user_id}).first();
 
         return response.json(note);
+
+     }
+
+     async tags(req, res){
+        const user_id = req.user.id;
+
+        const tags = await knex("tags")
+        .where({user_id})
+        .groupBy("name") 
+
+        return res.json(tags);
 
      }
 }

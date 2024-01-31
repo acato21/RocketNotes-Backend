@@ -1,6 +1,6 @@
 const AppError = require("../utils/AppError");
-const knex = require("../database/knex");
-const { hash, compare } = require("bcryptjs");
+const knex = require("../database/knex");//importando o banco de dados
+const { hash, compare } = require("bcryptjs");//hash serve pra criptografar e compare para comparar um texto não criptografado com um qeu já esteja
 const DiskStorage = require("../providers/DiskStorage");
 
 class UserController{
@@ -15,7 +15,7 @@ class UserController{
             throw new AppError("Este email já está em uso");
         }
 
-        const hashedPassword = await hash(password, 8)
+        const hashedPassword = await hash(password, 8);//Criptografando a senha
 
         await knex("users").insert({
             name: name,
@@ -54,7 +54,7 @@ class UserController{
         
         if(password && newPassword){
             
-            const checkPassword = await compare(password, user.password);
+            const checkPassword = await compare(password, user.password);//Comparado a senha criptografada
     
             if(!checkPassword){
                 throw new AppError("A senha está incorreta")
@@ -79,7 +79,7 @@ class UserController{
 
     async avatar(req, res){
         const user_id = req.user.id;
-        const avatar = req.file.filename;
+        const avatar = req.file.filename;//Puxando nome de arquivo
         const diskStorage = new DiskStorage();
 
         const [user] = await knex("users").where({id: user_id});
@@ -94,9 +94,11 @@ class UserController{
 
         await diskStorage.saveFile(avatar);
 
-        await knex("users").update({avatar}).where({id:user_id});
+        await knex("users").update({avatar}).where({id:user_id});1
 
-        return res.json(user)
+        const [userUpdate] = await knex("users").where({id: user_id});
+
+        return res.json(userUpdate)
     }
 
 }
