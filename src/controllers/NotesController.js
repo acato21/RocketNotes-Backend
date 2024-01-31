@@ -102,8 +102,10 @@ class NotesController{
         const user_id = request.user.id;
 
         const note = await knex("notes").where({id: note_id, user_id: user_id}).first();
+        const links = await knex("links").where({note_id});
+        const tags = await knex("tags").where({note_id});
 
-        return response.json(note);
+        return response.json({note, links, tags});
 
      }
 
