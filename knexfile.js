@@ -9,7 +9,7 @@ module.exports = {
     },
 
     pool: { 
-      afterCreate: (conn, cb) => conn.run("PRAGMA foreingn_key = ON", cb)//Para funcionar o efeito de exclusão em cascata
+      afterCreate: (conn, cb) => conn.run("PRAGMA foreign_keys = ON", cb)//Para funcionar o efeito de exclusão em cascata
     },
 
     migrations: {
