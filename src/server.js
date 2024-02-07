@@ -1,4 +1,5 @@
 require("express-async-errors");//Serve par apuxar o erros do código
+require("dotenv/config")
 
 const cors = require("cors");//Para ligar o backend com o front
 const express = require("express");
@@ -33,5 +34,5 @@ app.use(( error, require, response, next ) => {
 
 })
 
-const PORT = 3333;
+const PORT = process.env.PORT;
 app.listen(PORT, () => console.log(`Server is running on PORT: ${PORT}`) );
