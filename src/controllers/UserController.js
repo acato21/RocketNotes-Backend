@@ -1,7 +1,12 @@
 const AppError = require("../utils/AppError");
 const knex = require("../database/knex");//importando o banco de dados
-const { hash, compare } = require("bcryptjs");//hash serve pra criptografar e compare para comparar um texto não criptografado com um qeu já esteja
-const DiskStorage = require("../providers/DiskStorage");
+
+const UserRepository = require("../repositories/UserRepositorys");
+const userRepository = new UserRepository();
+
+const UserCreateServices = require("../services/User/UserCreateServices");
+const UserUpdateServices = require("../services/User/UserUpdateServices");
+const UserAvatarServices = require("../services/User/UserAvatarServices");
 
 class UserController{
 
@@ -9,19 +14,8 @@ class UserController{
 
         const { name, email, password } = request.body;
 
-        const [checkEmail] = await knex("users").where({email});
-
-        if(checkEmail){
-            throw new AppError("Este email já está em uso");
-        }
-
-        const hashedPassword = await hash(password, 8);//Criptografando a senha
-
-        await knex("users").insert({
-            name: name,
-            email: email,
-            password: hashedPassword
-    })
+        const userCreateServices = new UserCreateServices(userRepository);
+        await userCreateServices.execute({ name, email, password });
 
         return response.status(201).json();
 
@@ -32,47 +26,8 @@ class UserController{
         const { name, email, password, newPassword} = request.body;
         const user_id = request.user.id;
 
-        const [user] = await knex("users").where({id: user_id})
-
-        console.log(user.password)
-
-        if(email){
-            const [checkEmail] = await knex("users").where({email});
-
-            console.log(checkEmail)
-
-            if(checkEmail && checkEmail.id != user_id){
-                throw new AppError("O email já está em uso");
-            }
-        }
-
-
-        if(!password){
-            throw new AppError("Insira a senha atual");
-        }
-
-        
-        if(password && newPassword){
-            
-            const checkPassword = await compare(password, user.password);//Comparado a senha criptografada
-    
-            if(!checkPassword){
-                throw new AppError("A senha está incorreta")
-            }
-
-            user.password = await hash(newPassword, 8) 
-        }
-
-
-        user.email = email ?? user.email;
-        user.name = name ?? user.name;
-
-        await knex("users").update({
-            name: user.name,
-            email: user.email,
-            password: user.password
-        })
-        .where({id: user_id});
+        const userUpdateServices = new UserUpdateServices(userRepository);
+        await userUpdateServices.execute({name, email, password, newPassword, user_id });
         
         return response.json();
     }
@@ -80,23 +35,9 @@ class UserController{
     async avatar(req, res){
         const user_id = req.user.id;
         const avatar = req.file.filename;//Puxando nome de arquivo
-        const diskStorage = new DiskStorage();
 
-        const [user] = await knex("users").where({id: user_id});
-
-        if(!user){
-            throw new AppError("Para trocar foto de usuário é nescessário está logado", 401);
-        }
-
-        if(user.avatar){
-            await diskStorage.deleteFile(user.avatar);
-        }
-
-        await diskStorage.saveFile(avatar);
-
-        await knex("users").update({avatar}).where({id:user_id});1
-
-        const [userUpdate] = await knex("users").where({id: user_id});
+        const userAvatarServices = new UserAvatarServices(userRepository);
+        const userUpdate = await userAvatarServices.execute({user_id, avatar});
 
         return res.json(userUpdate)
     }

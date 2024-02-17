@@ -1,6 +1,13 @@
 const knex = require("../database/knex");
 const AppError = require("../utils/AppError");
 
+const NoteRepository = require("../repositories/NoteRepository");
+const noteRepository = new NoteRepository();
+
+const NoteCreateServices = require("../services/Notes/NoteCreateServices");
+
+
+
 class NotesController{
 
     async index(request, response){
@@ -52,38 +59,10 @@ class NotesController{
         const { title, description, links, tags } = request.body;
         const user_id = request.user.id;
 
-        const user = await knex("users").where({id: user_id});
+        const noteCreateServices = new NoteCreateServices(noteRepository);
+        await noteCreateServices.execute({title, description, links, tags, user_id });
 
-        console.log(user);
-
-        if(!user){
-            throw new AppError("Nenhum usuário cadastrado");
-        }
-
-        const [note_id] = await knex("notes").insert({title, description, user_id});
-
-        const linkInsert = links.map(link => {
-            return{
-                note_id,
-                url: link
-            };
-        });
-
-        await knex("links").insert(linkInsert);
-
-        const tagInsert = tags.map(tag => {
-            return{
-                user_id,
-                note_id,
-                name: tag
-            };
-        });
-
-        console.log(tagInsert)
-
-        await knex("tags").insert(tagInsert);
-
-        return response.json(note_id);
+        return response.json();
     }
 
     async delete(request, response){
